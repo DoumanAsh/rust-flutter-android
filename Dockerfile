@@ -1,16 +1,17 @@
-FROM plugfox/flutter:stable-android as build
+ARG FLUTTER_VERSION="stable"
+FROM plugfox/flutter:${FLUTTER_VERSION}-android as build
 
 USER root
 
+ENV CARGO_HOME=/usr/local/cargo
 ENV RUSTUP_HOME=/usr/local/rustup \
-    CARGO_HOME=/usr/local/cargo \
     ANDROID_NDK_HOME=$ANDROID_HOME/ndk \
     FLUTTER_SDK_HOME=$FLUTTER_HOME \
     PATH=$CARGO_HOME/bin:$ANDROID_HOME/ndk/22.1.7171670:$PATH \
     RUST_VERSION=stable
 
 RUN set -eux; \
-    apk add --no-cache make git ca-certificates musl-dev gcc file ;\
+    apk add --no-cache make git ca-certificates musl-dev gcc file tar ;\
     yes "y" | $FLUTTER_HOME/bin/flutter doctor --android-licenses ;\
     $FLUTTER_HOME/bin/dart --disable-analytics ;\
     $FLUTTER_HOME/bin/flutter config --no-analytics --enable-android ;\

@@ -10,14 +10,38 @@ on:
       - '.github/workflows/docker-image.yml'
     branches:
       - master
+  workflow_dispatch:
+    inputs:
+      flutter_version:
+        required: false
+        description: 'Flutter version'
+        default: 'stable'
 
 env:
   REGISTRY: docker.io
   IMAGE_NAME: douman/rust-flutter-android
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      flutter_version: ${{ steps.flutter_version.outputs.flutter_version }}
+    steps:
+      - id: flutter_version
+        run: |
+          VERSION="${{github.event.inputs.flutter_version}}"
+          if [ -z "$VERSION" ]
+          then
+              echo "Flutter version: 'stable'"
+              echo "::set-output name=flutter_version::stable"
+          else
+              echo "Flutter version: '$VERSION'"
+              echo "::set-output name=flutter_version::${{github.event.inputs.flutter_version}}"
+          fi
+
   build:
     runs-on: ubuntu-latest
+    needs: prepare
 
     steps:
       - name: Checkout repository
@@ -41,4 +65,6 @@ jobs:
           context: .
           platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ env.IMAGE_NAME }}:latest
+          tags: ${{ env.IMAGE_NAME }}:flutter-${{needs.prepare.outputs.flutter_version}}
+          build-args: |
+            FLUTTER_VERSION=${{needs.prepare.outputs.flutter_version}}
